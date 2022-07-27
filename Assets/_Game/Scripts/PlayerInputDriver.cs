@@ -13,29 +13,31 @@ public class PlayerInputDriver : NetworkBehaviour
 {
     [SerializeField] private float jumpSpeed = 6f;
     [SerializeField] private float speed = 8f;
-    [SerializeField] private float gravity = 9.8f;
+    [SerializeField] private float gravityRate = 9.8f;
     
     private CharacterController _characterController;
     private Vector2 _moveInput;
-    private Vector3 _moveDirection;
     private bool _jump;
+
+    private float _downVel;
 
     public struct MoveInputData
     {
-        public Vector2 moveVector;
-        public bool jump;
-        public bool grounded;
+        public Vector2 InputVector;
+        public bool Jump;
     }
 
     public struct ReconcileData
     {
         public Vector3 Position;
         public Quaternion Rotation;
+        public float DownVel;
 
-        public ReconcileData(Vector3 position, Quaternion rotation)
+        public ReconcileData(Vector3 position, Quaternion rotation, float downVel)
         {
             Position = position;
             Rotation = rotation;
+            DownVel = downVel;
         }
     }
 
@@ -54,23 +56,19 @@ public class PlayerInputDriver : NetworkBehaviour
     [Replicate]
     private void Move(MoveInputData md, bool asServer, bool replaying = false)
     {
-        Vector3 move = new Vector3();
-        if (md.grounded)
+        Vector3 move = new Vector3(md.InputVector.x, 0, md.InputVector.y) * speed;
+        move.y = _downVel;
+        if (_characterController.isGrounded)
         {
-            move.x = md.moveVector.x * speed;
-            move.y = 0;
-            move.z = md.moveVector.y * speed;
-            if (md.jump)
-                move.y = jumpSpeed;
-        }
-        else
-        {
-            move.x = md.moveVector.x;
-            move.z = md.moveVector.y;
+            if (md.Jump)
+                _downVel = jumpSpeed;
         }
 
-        move.y -= gravity * (float)TimeManager.TickDelta;
+        _downVel -= gravityRate * (float)TimeManager.TickDelta;
+        
         _characterController.Move(move * (float)TimeManager.TickDelta);
+        
+        Debug.Log($"Move, replaying: {replaying}");
     }
 
     [Reconcile]
@@ -78,15 +76,15 @@ public class PlayerInputDriver : NetworkBehaviour
     {
         transform.position = rd.Position;
         transform.rotation = rd.Rotation;
+        _downVel = rd.DownVel;
     }
 
     private void GetInputData(out MoveInputData moveInputData)
     {
         moveInputData = new MoveInputData()
         {
-            jump = _jump,
-            grounded = _characterController.isGrounded,
-            moveVector = _moveInput
+            Jump = _jump,
+            InputVector = _moveInput
         };
     }
 
@@ -102,7 +100,7 @@ public class PlayerInputDriver : NetworkBehaviour
         if (IsServer)
         {
             Move(default, true);
-            ReconcileData rd = new ReconcileData(transform.position, transform.rotation);
+            ReconcileData rd = new ReconcileData(transform.position, transform.rotation, _downVel);
             Reconciliation(rd, true);
         }
     }

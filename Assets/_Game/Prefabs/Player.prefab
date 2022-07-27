@@ -253,7 +253,7 @@ MonoBehaviour:
   _networkObjectCache: {fileID: 2600568712216449729}
   jumpSpeed: 6
   speed: 8
-  gravity: 9.8
+  gravityRate: 9.8
 --- !u!114 &-8227930353415262010
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -340,7 +340,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: e53da2713ad25c842805124eb884df7c, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
